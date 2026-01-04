@@ -3,5 +3,5 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-50 text-slate-700 antialiased;
+  @apply bg-island-background text-island-text antialiased;
 }
