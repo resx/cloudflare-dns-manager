@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build and Push Docker Image
 
 on:
   push:
@@ -27,37 +27,19 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Extract metadata (tags, labels) for Docker
-      id: meta-server
+      id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/${{ github.repository }}-server
+        images: ghcr.io/${{ github.repository }}
         tags: |
           type=ref,event=branch
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
     
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta-client
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/${{ github.repository }}-client
-        tags: |
-          type=ref,event=branch
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-    
-    - name: Build and push server image
+    - name: Build and push image
       uses: docker/build-push-action@v4
       with:
-        context: ./server
+        context: .
         push: true
-        tags: ${{ steps.meta-server.outputs.tags }}
-        labels: ${{ steps.meta-server.outputs.labels }}
-    
-    - name: Build and push client image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./client
-        push: true
-        tags: ${{ steps.meta-client.outputs.tags }}
-        labels: ${{ steps.meta-client.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}

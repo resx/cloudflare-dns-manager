@@ -1,26 +1,16 @@
 version: '3.8'
 
 services:
-  server:
-    image: ghcr.io/dbedu/cloudflare-dns-manager-server:latest
-    container_name: cfserver
+  app:
+    build: .
+    container_name: cf-dns-dashboard
     ports:
-      - "3001:3001"
+      - "8081:3001"
     env_file:
       - ./server/.env
     volumes:
       - sqlite_data:/app/database
       - ./server/src/config:/app/src/config
-
-  client:
-    image: ghcr.io/dbedu/cloudflare-dns-manager-client:latest
-    container_name: cfclient
-    ports:
-      - "8081:80"
-    depends_on:
-      - server
-    environment:
-      - REACT_APP_API_URL=http://server:3001
 
 volumes:
   sqlite_data:
