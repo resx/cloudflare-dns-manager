@@ -3,6 +3,7 @@ import RecordEditModal from '../components/RecordEditModal';
 import toast from 'react-hot-toast';
 import { PlusIcon, PencilSquareIcon, TrashIcon, CloudIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
+import apiClient from '../services/apiClient.js';
 
 const API_BASE_URL = '';
 
@@ -12,21 +13,18 @@ const Dashboard = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
-  
+
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
 
-  const getAuthToken = () => localStorage.getItem('token');
+
 
   const fetchZones = useCallback(async () => {
     setLoading(true);
     try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/api/dns/zones`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_BASE_URL}/api/dns/zones`);
       if (!response.ok) throw new Error(t('dashboard.errors.fetchZones'));
       const data = await response.json();
       if (data.result) setZones(data.result);
@@ -42,10 +40,7 @@ const Dashboard = () => {
     setLoading(true);
     setRecords([]);
     try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/api/dns/zones/${zoneId}/records`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_BASE_URL}/api/dns/zones/${zoneId}/records`);
       if (!response.ok) throw new Error(t('dashboard.errors.fetchRecords'));
       const data = await response.json();
       if (data.result) {
@@ -85,16 +80,14 @@ const Dashboard = () => {
   };
 
   const handleSaveRecord = async (formData) => {
-    const token = getAuthToken();
     const method = editingRecord ? 'PUT' : 'POST';
     const recordId = editingRecord ? editingRecord.id : '';
     const url = `${API_BASE_URL}/api/dns/zones/${selectedZone}/records/${recordId}`;
 
     try {
-      const response = await fetch(url, {
+      const response = await apiClient.request(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
@@ -114,14 +107,10 @@ const Dashboard = () => {
   const handleDeleteRecord = async (recordId) => {
     if (!window.confirm(t('dashboard.confirmDelete'))) return;
 
-    const token = getAuthToken();
     const url = `${API_BASE_URL}/api/dns/zones/${selectedZone}/records/${recordId}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await apiClient.delete(url);
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.error || t('dashboard.errors.deleteRecord'));
@@ -134,7 +123,6 @@ const Dashboard = () => {
   };
 
   const handleToggleProxy = async (record) => {
-    const token = getAuthToken();
     const newProxiedStatus = !record.proxied;
     const url = `${API_BASE_URL}/api/dns/zones/${selectedZone}/records/${record.id}`;
 
@@ -148,14 +136,7 @@ const Dashboard = () => {
     };
 
     try {
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedRecord),
-      });
+      const response = await apiClient.put(url, updatedRecord);
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.error || t('dashboard.errors.toggleProxy'));

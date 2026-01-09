@@ -3,6 +3,7 @@ import { useAuth } from '../context/authContext';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon, CheckCircleIcon, ShieldExclamationIcon, WifiIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
+import apiClient from '../services/apiClient.js';
 
 const API_BASE_URL = '';
 
@@ -12,7 +13,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
-  
+
   const [apiToken, setApiToken] = useState('');
   const [currentKey, setCurrentKey] = useState('');
   const [newKey, setNewKey] = useState('');
@@ -20,10 +21,7 @@ const AdminPanel = () => {
 
   const fetchConfig = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/config`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`${API_BASE_URL}/api/config`);
       if (response.ok) {
         setConfig(await response.json());
       } else {
@@ -45,12 +43,7 @@ const AdminPanel = () => {
     setSaving(true);
     const toastId = toast.loading(t('adminPanel.messages.updatingApiToken'));
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/config/cloudflare-token`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ apiToken }),
-      });
+      const response = await apiClient.put(`${API_BASE_URL}/api/config/cloudflare-token`, { apiToken });
       toast.dismiss(toastId);
       if (response.ok) {
         toast.success(t('adminPanel.messages.apiTokenUpdated'));
@@ -77,12 +70,7 @@ const AdminPanel = () => {
     setSaving(true);
     const toastId = toast.loading(t('adminPanel.messages.updatingLoginKey'));
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/config/login-key`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ currentKey, newKey }),
-      });
+      const response = await apiClient.put(`${API_BASE_URL}/api/config/login-key`, { currentKey, newKey });
       toast.dismiss(toastId);
       if (response.ok) {
         toast.success(t('adminPanel.messages.loginKeyUpdated'));
@@ -106,11 +94,7 @@ const AdminPanel = () => {
     setSaving(true);
     const toastId = toast.loading(t('adminPanel.messages.testingApiConnection'));
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/config/test-cloudflare`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await apiClient.post(`${API_BASE_URL}/api/config/test-cloudflare`);
       const data = await response.json();
       toast.dismiss(toastId);
       if (data.success) {
@@ -133,22 +117,22 @@ const AdminPanel = () => {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-8">
-        
+
         <div className="bg-white p-6 shadow-lg rounded-xl">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">{t('adminPanel.cloudflareApiToken.title')}</h2>
           <div className="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-200 text-sm">
             <p className="flex items-center">
               <span className="font-medium text-slate-600 w-28">{t('adminPanel.cloudflareApiToken.status')}:</span>
-              {config?.hasApiToken ? 
-                <span className="font-semibold text-green-600 flex items-center"><CheckCircleIcon className="h-5 w-5 mr-1"/>{t('adminPanel.cloudflareApiToken.configured')}</span> : 
-                <span className="font-semibold text-red-600 flex items-center"><ShieldExclamationIcon className="h-5 w-5 mr-1"/>{t('adminPanel.cloudflareApiToken.notConfigured')}</span>
+              {config?.hasApiToken ?
+                <span className="font-semibold text-green-600 flex items-center"><CheckCircleIcon className="h-5 w-5 mr-1" />{t('adminPanel.cloudflareApiToken.configured')}</span> :
+                <span className="font-semibold text-red-600 flex items-center"><ShieldExclamationIcon className="h-5 w-5 mr-1" />{t('adminPanel.cloudflareApiToken.notConfigured')}</span>
               }
             </p>
             {config?.lastUpdated && (
               <p className="text-xs text-slate-500 mt-2 ml-28">{t('adminPanel.cloudflareApiToken.lastUpdated')}: {new Date(config.lastUpdated).toLocaleString()}</p>
             )}
           </div>
-          
+
           <form onSubmit={updateApiToken} className="space-y-4">
             <div>
               <label htmlFor="apiToken" className="block text-sm font-medium text-slate-600">{t('adminPanel.cloudflareApiToken.newApiToken')}</label>
@@ -164,7 +148,7 @@ const AdminPanel = () => {
             </div>
           </form>
         </div>
-        
+
         <div className="bg-white p-6 shadow-lg rounded-xl">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">{t('adminPanel.loginKey.title')}</h2>
           <form onSubmit={updateLoginKey} className="space-y-4">
