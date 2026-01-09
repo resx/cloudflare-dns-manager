@@ -4,6 +4,13 @@ import toast from 'react-hot-toast';
 import { ArrowPathIcon, CheckCircleIcon, ShieldExclamationIcon, WifiIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../services/apiClient.js';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card.jsx';
+import { Input } from '../components/ui/input.jsx';
+import { Label } from '../components/ui/label.jsx';
+import { Button } from '../components/ui/button.jsx';
+import { Badge } from '../components/ui/badge.jsx';
+import FadeIn from '../components/animated/fade-in.jsx';
+import BlurText from '../components/animated/blur-text.jsx';
 
 const API_BASE_URL = '';
 
@@ -98,81 +105,156 @@ const AdminPanel = () => {
       const data = await response.json();
       toast.dismiss(toastId);
       if (data.success) {
-        toast.success('Cloudflare API connection successful!');
+        toast.success(t('adminPanel.messages.apiConnectionSuccess'));
       } else {
-        toast.error(data.message || t('adminPanel.errors.apiConnectionFailed'));
+        toast.error(data.error || t('adminPanel.errors.apiConnectionFailed'));
       }
     } catch (err) {
       toast.dismiss(toastId);
-      toast.error(t('adminPanel.errors.networkApiTest'));
+      toast.error(t('adminPanel.errors.network'));
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return <div className="text-center p-8">{t('adminPanel.messages.loadingConfig')}</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <ArrowPathIcon className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">{t('adminPanel.loading')}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-8">
-
-        <div className="bg-white p-6 shadow-lg rounded-xl">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">{t('adminPanel.cloudflareApiToken.title')}</h2>
-          <div className="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-200 text-sm">
-            <p className="flex items-center">
-              <span className="font-medium text-slate-600 w-28">{t('adminPanel.cloudflareApiToken.status')}:</span>
-              {config?.hasApiToken ?
-                <span className="font-semibold text-green-600 flex items-center"><CheckCircleIcon className="h-5 w-5 mr-1" />{t('adminPanel.cloudflareApiToken.configured')}</span> :
-                <span className="font-semibold text-red-600 flex items-center"><ShieldExclamationIcon className="h-5 w-5 mr-1" />{t('adminPanel.cloudflareApiToken.notConfigured')}</span>
-              }
-            </p>
-            {config?.lastUpdated && (
-              <p className="text-xs text-slate-500 mt-2 ml-28">{t('adminPanel.cloudflareApiToken.lastUpdated')}: {new Date(config.lastUpdated).toLocaleString()}</p>
-            )}
-          </div>
-
-          <form onSubmit={updateApiToken} className="space-y-4">
-            <div>
-              <label htmlFor="apiToken" className="block text-sm font-medium text-slate-600">{t('adminPanel.cloudflareApiToken.newApiToken')}</label>
-              <input type="password" id="apiToken" value={apiToken} onChange={(e) => setApiToken(e.target.value)} className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder={t('adminPanel.cloudflareApiToken.newApiTokenPlaceholder')} autoComplete="off" />
-            </div>
-            <div className="flex items-center space-x-4">
-              <button type="submit" disabled={saving || !apiToken} className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                <ArrowPathIcon className="h-5 w-5" /><span>{saving ? t('adminPanel.buttons.saving') : t('adminPanel.buttons.saveUpdate')}</span>
-              </button>
-              <button type="button" onClick={testApiConnection} disabled={saving || !config?.hasApiToken} className="inline-flex items-center space-x-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                <WifiIcon className="h-5 w-5" /><span>{saving ? t('adminPanel.buttons.testing') : t('adminPanel.buttons.testConnection')}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div className="bg-white p-6 shadow-lg rounded-xl">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">{t('adminPanel.loginKey.title')}</h2>
-          <form onSubmit={updateLoginKey} className="space-y-4">
-            {/* Hidden username field for accessibility and to prevent autocomplete on wrong fields */}
-            <input type="text" name="username" defaultValue="dns-manager-user" className="hidden" autoComplete="username" />
-            <div>
-              <label htmlFor="currentKey" className="block text-sm font-medium text-slate-600">{t('adminPanel.loginKey.currentKey')}</label>
-              <input type="password" id="currentKey" value={currentKey} onChange={(e) => setCurrentKey(e.target.value)} className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder={t('adminPanel.loginKey.currentKeyPlaceholder')} autoComplete="current-password" />
-            </div>
-            <div>
-              <label htmlFor="newKey" className="block text-sm font-medium text-slate-600">{t('adminPanel.loginKey.newKey')}</label>
-              <input type="password" id="newKey" value={newKey} onChange={(e) => setNewKey(e.target.value)} className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder={t('adminPanel.loginKey.newKeyPlaceholder')} autoComplete="new-password" />
-            </div>
-            <div>
-              <label htmlFor="confirmKey" className="block text-sm font-medium text-slate-600">{t('adminPanel.loginKey.confirmNewKey')}</label>
-              <input type="password" id="confirmKey" value={confirmKey} onChange={(e) => setConfirmKey(e.target.value)} className="mt-1 block w-full border border-slate-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder={t('adminPanel.loginKey.confirmNewKeyPlaceholder')} autoComplete="new-password" />
-            </div>
-            <button type="submit" disabled={saving || !currentKey || !newKey || !confirmKey} className="w-full inline-flex justify-center items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              <ShieldExclamationIcon className="h-5 w-5" /><span>{saving ? t('adminPanel.buttons.updating') : t('adminPanel.buttons.updateLoginKey')}</span>
-            </button>
-          </form>
-        </div>
-
+    <div className="container mx-auto p-4 md:p-8 space-y-6">
+      <div className="mb-8">
+        <BlurText text={t('nav.adminPanel')} className="text-3xl font-bold mb-2" />
+        <p className="text-muted-foreground">{t('adminPanel.description')}</p>
       </div>
+
+      {/* API Token Configuration */}
+      <FadeIn delay={0.1}>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <WifiIcon className="h-6 w-6 text-primary" />
+              <CardTitle>{t('adminPanel.cloudflareApiToken')}</CardTitle>
+            </div>
+            <CardDescription>{t('adminPanel.apiTokenDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {config?.cloudflareToken && (
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                <span className="text-sm">{t('adminPanel.apiTokenConfigured')}</span>
+                <Badge variant="secondary" className="ml-auto">
+                  {t('adminPanel.configured')}
+                </Badge>
+              </div>
+            )}
+
+            <form onSubmit={updateApiToken} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="apiToken">{t('adminPanel.newApiToken')}</Label>
+                <Input
+                  id="apiToken"
+                  type="password"
+                  value={apiToken}
+                  onChange={(e) => setApiToken(e.target.value)}
+                  placeholder={t('adminPanel.enterApiToken')}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button type="submit" disabled={saving || !apiToken}>
+                  {saving ? t('adminPanel.updating') : t('adminPanel.updateApiToken')}
+                </Button>
+                {config?.cloudflareToken && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={testApiConnection}
+                    disabled={saving}
+                  >
+                    <ArrowPathIcon className="h-4 w-4 mr-2" />
+                    {t('adminPanel.testConnection')}
+                  </Button>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </FadeIn>
+
+      {/* Login Key Configuration */}
+      <FadeIn delay={0.2}>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShieldExclamationIcon className="h-6 w-6 text-primary" />
+              <CardTitle>{t('adminPanel.changeLoginKey')}</CardTitle>
+            </div>
+            <CardDescription>{t('adminPanel.loginKeyDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={updateLoginKey} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentKey">{t('adminPanel.currentLoginKey')}</Label>
+                <Input
+                  id="currentKey"
+                  type="password"
+                  value={currentKey}
+                  onChange={(e) => setCurrentKey(e.target.value)}
+                  placeholder={t('adminPanel.enterCurrentKey')}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newKey">{t('adminPanel.newLoginKey')}</Label>
+                <Input
+                  id="newKey"
+                  type="password"
+                  value={newKey}
+                  onChange={(e) => setNewKey(e.target.value)}
+                  placeholder={t('adminPanel.enterNewKey')}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmKey">{t('adminPanel.confirmNewKey')}</Label>
+                <Input
+                  id="confirmKey"
+                  type="password"
+                  value={confirmKey}
+                  onChange={(e) => setConfirmKey(e.target.value)}
+                  placeholder={t('adminPanel.confirmNewKey')}
+                  required
+                />
+              </div>
+
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ {t('adminPanel.keyChangeWarning')}
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={saving || !currentKey || !newKey || !confirmKey}
+              >
+                {saving ? t('adminPanel.updating') : t('adminPanel.updateLoginKey')}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </FadeIn>
     </div>
   );
 };

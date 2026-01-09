@@ -4,6 +4,8 @@ import { useAuth } from '../context/authContext';
 import { ArrowLeftOnRectangleIcon, Cog6ToothIcon, HomeIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import { Button } from './ui/button.jsx';
+import { cn } from '../lib/utils.js';
 
 const Layout = ({ children }) => {
   const { logout } = useAuth();
@@ -15,43 +17,53 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
-  const baseLinkClass = "flex items-center space-x-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors duration-150";
-  const activeLinkClass = "bg-slate-200 text-slate-900 font-semibold";
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
-            <div className="text-lg font-bold text-slate-800">{t('nav.title')}</div>
-            <div className="flex items-center space-x-4">
-              <NavLink 
-                to="/dashboard" 
-                className={({ isActive }) => `${baseLinkClass} ${isActive ? activeLinkClass : ''}`}
+            <div className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              {t('nav.title')}
+            </div>
+            <div className="flex items-center gap-2">
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) => cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
               >
                 <HomeIcon className="h-5 w-5" />
-                <span className="min-w-[80px] text-center">{t('nav.dashboard')}</span>
+                <span>{t('nav.dashboard')}</span>
               </NavLink>
-              <NavLink 
-                to="/admin" 
-                className={({ isActive }) => `${baseLinkClass} ${isActive ? activeLinkClass : ''}`}
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
               >
                 <Cog6ToothIcon className="h-5 w-5" />
-                <span className="min-w-[80px] text-center">{t('nav.adminPanel')}</span>
+                <span>{t('nav.adminPanel')}</span>
               </NavLink>
               <LanguageSwitcher />
-              <button 
-                onClick={handleLogout} 
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150"
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-destructive"
               >
-                <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                <span className="min-w-[80px] text-center">{t('nav.logout')}</span>
-              </button>
+                <ArrowLeftOnRectangleIcon className="h-5 w-5 mr-2" />
+                {t('nav.logout')}
+              </Button>
             </div>
           </div>
         </div>
       </nav>
-      <main>
+      <main className="transition-all duration-300">
         {children}
       </main>
     </div>
