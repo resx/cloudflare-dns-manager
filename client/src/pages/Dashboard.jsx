@@ -4,6 +4,15 @@ import toast from 'react-hot-toast';
 import { PlusIcon, PencilSquareIcon, TrashIcon, CloudIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../services/apiClient.js';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card.jsx';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table.jsx';
+import { Badge } from '../components/ui/badge.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select.jsx';
+import { Button } from '../components/ui/button.jsx';
+import FadeIn from '../components/animated/fade-in.jsx';
+import BlurText from '../components/animated/blur-text.jsx';
+import ShimmerButton from '../components/animated/shimmer-button.jsx';
+import NumberTicker from '../components/animated/number-ticker.jsx';
 
 const API_BASE_URL = '';
 
@@ -151,83 +160,122 @@ const Dashboard = () => {
   const isProxiedApplicable = (type) => ['A', 'AAAA', 'CNAME'].includes(type);
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">{t('nav.dashboard')}</h1>
-      <div className="mb-8 flex justify-center">
-        <div className="w-full max-w-md">
-          <label htmlFor="zone-select" className="block text-sm font-medium text-slate-600 mb-1">{t('dashboard.selectZone')}</label>
-          <select id="zone-select" value={selectedZone} onChange={handleZoneChange} className="block w-full p-2 border border-slate-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" disabled={loading}>
-            <option value="">{t('dashboard.pleaseSelectZone')}</option>
-            {zones.map(zone => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
-          </select>
-        </div>
+    <div className="container mx-auto p-4 md:p-8 space-y-6">
+      <div className="mb-8">
+        <BlurText text={t('nav.dashboard')} className="text-3xl font-bold mb-2" />
+        {records.length > 0 && (
+          <p className="text-muted-foreground flex items-center gap-2">
+            Total Records: <NumberTicker value={records.length} className="font-semibold text-primary" />
+          </p>
+        )}
       </div>
 
-      {loading && <div className="text-center p-4">Loading records...</div>}
+      <FadeIn delay={0.1}>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('dashboard.selectZone')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedZone} onValueChange={(value) => {
+              setSelectedZone(value);
+              fetchRecords(value);
+            }} disabled={loading}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t('dashboard.pleaseSelectZone')} />
+              </SelectTrigger>
+              <SelectContent>
+                {zones.map(zone => (
+                  <SelectItem key={zone.id} value={zone.id}>{zone.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      </FadeIn>
+
+      {loading && <div className="text-center p-8 text-muted-foreground">Loading records...</div>}
 
       {selectedZone && !loading && (
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-          <div className="flex justify-between items-center p-5 border-b border-slate-200">
-            <h2 className="text-lg font-semibold text-slate-800">{t('dashboard.recordsTitle')}</h2>
-            <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-              <PlusIcon className="h-5 w-5" />
-              <span>{t('dashboard.addRecord')}</span>
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('dashboard.table.type')}</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('dashboard.table.name')}</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('dashboard.table.content')}</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('dashboard.table.ttl')}</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('dashboard.table.proxyStatus')}</th>
-                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">{t('dashboard.table.actions')}</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.length > 0 ? records.map((record, recordIdx) => (
-                  <tr key={record.id} className="border-b border-slate-200 hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">{record.type}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 font-mono">{record.name}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500 break-all font-mono">{record.content}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{record.ttl === 1 ? 'Automatic' : record.ttl}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {isProxiedApplicable(record.type) ? (
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            value=""
-                            className="sr-only peer"
-                            checked={record.proxied}
-                            onChange={() => handleToggleProxy(record)}
-                          />
-                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                          <span className="ml-3 text-sm font-medium text-slate-900">
-                            {record.proxied ? <CloudIcon className="h-5 w-5 text-indigo-600" /> : <GlobeAltIcon className="h-5 w-5 text-slate-400" />}
-                          </span>
-                        </label>
-                      ) : (
-                        <span className="text-slate-400">N/A</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                      <button onClick={() => handleOpenModal(record)} className="text-slate-500 hover:text-indigo-600"><PencilSquareIcon className="h-5 w-5" /></button>
-                      <button onClick={() => handleDeleteRecord(record.id)} className="text-slate-500 hover:text-red-600"><TrashIcon className="h-5 w-5" /></button>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-4 text-center text-sm text-slate-500">{t('dashboard.noRecords')}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <FadeIn delay={0.2}>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle>{t('dashboard.recordsTitle')}</CardTitle>
+              <ShimmerButton onClick={() => handleOpenModal()}>
+                <PlusIcon className="h-5 w-5 mr-2" />
+                {t('dashboard.addRecord')}
+              </ShimmerButton>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('dashboard.table.type')}</TableHead>
+                    <TableHead>{t('dashboard.table.name')}</TableHead>
+                    <TableHead>{t('dashboard.table.content')}</TableHead>
+                    <TableHead>{t('dashboard.table.ttl')}</TableHead>
+                    <TableHead>{t('dashboard.table.proxyStatus')}</TableHead>
+                    <TableHead className="text-right">{t('dashboard.table.actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {records.length > 0 ? records.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell>
+                        <Badge>{record.type}</Badge>
+                      </TableCell>
+                      <TableCell className="font-mono">{record.name}</TableCell>
+                      <TableCell className="font-mono text-muted-foreground break-all">{record.content}</TableCell>
+                      <TableCell>{record.ttl === 1 ? 'Automatic' : record.ttl}</TableCell>
+                      <TableCell>
+                        {isProxiedApplicable(record.type) ? (
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={record.proxied}
+                              onChange={() => handleToggleProxy(record)}
+                            />
+                            <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-background after:border after:border-border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <span className="ml-3">
+                              {record.proxied ? <CloudIcon className="h-5 w-5 text-primary" /> : <GlobeAltIcon className="h-5 w-5 text-muted-foreground" />}
+                            </span>
+                          </label>
+                        ) : (
+                          <span className="text-muted-foreground">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenModal(record)}
+                          >
+                            <PencilSquareIcon className="h-5 w-5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteRecord(record.id)}
+                            className="hover:text-destructive"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        {t('dashboard.noRecords')}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </FadeIn>
       )}
 
       <RecordEditModal
